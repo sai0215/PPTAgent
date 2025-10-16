@@ -65,6 +65,7 @@ dependencies = [
 
 [project.optional-dependencies]
 full = ["transformers<4.50.0", "fasttext", "einops", "peft", "huggingface_hub", "timm"]
+textract = ["boto3>=1.26.0"]
 
 [project.urls]
 "Homepage" = "https://github.com/icip-cas/PPTAgent"
@@ -96,7 +97,8 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 markers = [
     "llm: mark test as using LLM (requires OPENAI_API_KEY)",
-    "parse: mark test as using minerU API",
+    "parse: mark test as using PDF parser (minerU or AWS Textract)",
+    "textract: mark test as using AWS Textract (requires AWS credentials)",
     "asyncio: mark test as using asyncio",
 ]
 

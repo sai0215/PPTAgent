@@ -7,7 +7,7 @@ from jinja2 import Environment, StrictUndefined
 from pydantic import BaseModel
 
 from pptagent.llms import AsyncLLM
-from pptagent.utils import edit_distance, package_join
+from pptagent.utils import edit_distance, package_join, get_logger
 
 env = Environment(undefined=StrictUndefined)
 
@@ -408,6 +408,14 @@ def parse_table_with_merges(
     """
     soup = BeautifulSoup(html, "html.parser")
     table = soup.find("table")
+    
+    # Check if table was found
+    if table is None:
+        # HTML doesn't contain a valid table, return empty result
+        logger = get_logger(__name__)
+        logger.warning(f"No HTML table found in content: {html[:200]}")
+        return ([], [])
+    
     # Calculate maximum rows and columns of the table
     rows = table.find_all("tr")
     max_row = 0

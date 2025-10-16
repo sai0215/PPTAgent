@@ -71,7 +71,6 @@ class ProgressManager:
         self.task_id = task_id
         self.stages = stages
         self.debug = debug
-        self.task_id = task_id
         self.failed = False
         self.current_stage = 0
         self.total_stages = len(stages)
@@ -134,8 +133,8 @@ async def create_task(
             os.makedirs(pdf_dir, exist_ok=True)
             with open(join(pdf_dir, "source.pdf"), "wb") as f:
                 f.write(pdf_blob)
-    if topic is not None:
-        task["pdf"] = topic
+    elif topic is not None:
+        task["topic"] = topic
     progress_store[task_id] = task
     # Start the PPT generation task asynchronously
     asyncio.create_task(ppt_gen(task_id))
@@ -275,11 +274,13 @@ async def ppt_gen(task_id: str, rerun=False):
 
         # pdf parsing
         if not os.path.exists(join(parsedpdf_dir, "source.md")):
-            text_content = parse_pdf(
+            await parse_pdf(
                 join(RUNS_DIR, "pdf", pdf_md5, "source.pdf"),
                 parsedpdf_dir,
-                models.marker_model,
             )
+            text_content = open(
+                join(parsedpdf_dir, "source.md"), encoding="utf-8"
+            ).read()
         else:
             text_content = open(
                 join(parsedpdf_dir, "source.md"), encoding="utf-8"

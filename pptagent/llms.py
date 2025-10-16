@@ -144,14 +144,26 @@ class LLM:
             self.client.models.list()
             return True
         except Exception as e:
-            logger.warning(
-                "Connection test failed: %s\nLLM: %s: %s, %s",
-                e,
-                self.model,
-                self.base_url,
-                self.api_key,
+            # If models.list() fails, try a simple completion request
+            logger.info(
+                "models.list() not supported, trying simple completion test: %s", e
             )
-            return False
+            try:
+                completion = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[{"role": "user", "content": "Hi"}],
+                    max_tokens=5,
+                )
+                return completion.choices[0].message.content is not None
+            except Exception as e2:
+                logger.warning(
+                    "Connection test failed: %s\nLLM: %s: %s, %s",
+                    e2,
+                    self.model,
+                    self.base_url,
+                    self.api_key,
+                )
+                return False
 
     def format_message(
         self,
@@ -373,17 +385,30 @@ class AsyncLLM(LLM):
             bool: True if connection is successful, False otherwise.
         """
         try:
+            # Try to list models first
             models = await self.client.models.list()
             return any(model.id == self.model for model in models.data)
         except Exception as e:
-            logger.warning(
-                "Async connection test failed: %s\nLLM: %s: %s, %s",
-                e,
-                self.model,
-                self.base_url,
-                self.api_key,
+            # If models.list() fails, try a simple completion request
+            logger.info(
+                "models.list() not supported, trying simple completion test: %s", e
             )
-            return False
+            try:
+                completion = await self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[{"role": "user", "content": "Hi"}],
+                    max_tokens=5,
+                )
+                return completion.choices[0].message.content is not None
+            except Exception as e2:
+                logger.warning(
+                    "Async connection test failed: %s\nLLM: %s: %s, %s",
+                    e2,
+                    self.model,
+                    self.base_url,
+                    self.api_key,
+                )
+                return False
 
     async def gen_image(self, prompt: str, n: int = 1, **kwargs) -> str:
         """

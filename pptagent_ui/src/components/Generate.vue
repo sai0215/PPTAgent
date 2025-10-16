@@ -89,70 +89,146 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px;
+  padding: 3rem 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+  background: linear-gradient(135deg, #FFFFFF 0%, #FFF9F5 100%);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(232, 119, 34, 0.12);
+  border: 1px solid rgba(232, 119, 34, 0.1);
+}
+
+.task-id {
+  font-size: 1rem;
+  margin-bottom: 2rem;
+  color: #D04A02;
+  font-weight: 600;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, #FFE4D1 0%, #FFF5EE 100%);
+  border-left: 4px solid #E87722;
+  border-radius: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  box-shadow: 0 2px 8px rgba(232, 119, 34, 0.15);
 }
 
 .progress-bar {
   width: 100%;
-  height: 20px;
-  margin-bottom: 10px;
+  height: 36px;
+  margin-bottom: 1.5rem;
   appearance: none;
-  background-color: #f3f3f3;
-}
-
-.task-id {
-  font-size: 1.2em;
-  margin-bottom: 10px;
-  color: #df8638;
+  background: linear-gradient(135deg, #FFF9F5 0%, #FFE8D6 100%);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 8px rgba(232, 119, 34, 0.1);
+  border: 2px solid rgba(232, 119, 34, 0.2);
 }
 
 .progress-bar::-webkit-progress-bar {
-  background-color: #f3f3f3;
+  background: linear-gradient(135deg, #FFF9F5 0%, #FFE8D6 100%);
+  border-radius: 18px;
 }
 
 .progress-bar::-webkit-progress-value {
-  background-color: #42b983;
+  background: linear-gradient(90deg, #E87722 0%, #FFB85C 50%, #E87722 100%);
+  border-radius: 18px;
+  transition: width 0.3s ease;
+  box-shadow: 0 2px 8px rgba(232, 119, 34, 0.4);
+}
+
+.progress-bar::-moz-progress-bar {
+  background: linear-gradient(90deg, #E87722 0%, #FFB85C 50%, #E87722 100%);
+  border-radius: 18px;
 }
 
 .status-message {
-  font-size: 1.2em;
-  margin-bottom: 10px;
-  color: #333;
+  font-size: 1.125rem;
+  margin-bottom: 2rem;
+  color: #D04A02;
+  font-weight: 500;
+  text-align: center;
+  line-height: 1.6;
 }
 
 .download-link {
-  font-size: 1em;
-  color: #42b983;
+  font-size: 1.125rem;
+  color: white;
+  background: linear-gradient(135deg, #E87722 0%, #D04A02 100%);
   text-decoration: none;
-  border: 1px solid #42b983;
-  padding: 8px 16px;
-  border-radius: 4px;
-  transition: background-color 0.3s;
+  padding: 1rem 2.5rem;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  box-shadow: 0 4px 16px rgba(232, 119, 34, 0.3);
+  margin-bottom: 2rem;
 }
 
 .download-link:hover {
-  background-color: #42b983;
-  color: #fff;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 24px rgba(232, 119, 34, 0.4);
+  background: linear-gradient(135deg, #F08030 0%, #E05510 100%);
 }
 
 .feedback-input {
-  margin-top: 10px;
-  padding: 8px;
+  margin-top: 2rem;
+  padding: 1rem;
   width: 100%;
   box-sizing: border-box;
+  border: 2px solid rgba(232, 119, 34, 0.3);
+  border-radius: 12px;
+  font-size: 1rem;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  transition: all 0.3s ease;
+  min-height: 100px;
+  resize: vertical;
+  background: linear-gradient(135deg, #FFFFFF 0%, #FFF9F5 100%);
+  color: #D04A02;
+}
+
+.feedback-input::placeholder {
+  color: rgba(208, 74, 2, 0.5);
+}
+
+.feedback-input:focus {
+  outline: none;
+  border-color: #E87722;
+  box-shadow: 0 0 0 4px rgba(232, 119, 34, 0.15);
+  background: white;
 }
 
 .feedback-button {
-  margin-top: 10px;
-  padding: 8px 16px;
-  background-color: #42b983;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
+  margin-top: 1rem;
+  padding: 0.875rem 2rem;
+  background: linear-gradient(135deg, #FFE4D1 0%, #FFD4B8 100%);
+  color: #D04A02;
+  border: 2px solid rgba(232, 119, 34, 0.3);
+  border-radius: 12px;
   cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(232, 119, 34, 0.2);
 }
 
 .feedback-button:hover {
-  background-color: #369b72;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(232, 119, 34, 0.3);
+  background: linear-gradient(135deg, #FFD4B8 0%, #FFC49F 100%);
+  border-color: #E87722;
+}
+
+.feedback-button:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+  .generate-container {
+    padding: 2rem 1rem;
+  }
+  
+  .download-link {
+    width: 100%;
+    text-align: center;
+  }
 }
 </style>

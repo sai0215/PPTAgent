@@ -54,7 +54,39 @@ Table of Contents
     </tr>
   </tbody>
 </table>
-To parse your uploaded PDF files, please follow [MinerU](https://opendatalab.github.io/MinerU/usage/quick_usage/#advanced-usage-via-api-webui-sglang-clientserver) and set the `MINERU_API` environment variable to `http://localhost:8000/file_parse`.
+### PDF Parsing Options
+
+PPTAgent supports two options for parsing PDF files:
+
+#### Option 1: MinerU (Default)
+To parse your uploaded PDF files using MinerU, follow [MinerU](https://opendatalab.github.io/MinerU/usage/quick_usage/#advanced-usage-via-api-webui-sglang-clientserver) and set the `MINERU_API` environment variable:
+
+```bash
+export PDF_PARSER="mineru"  # This is the default
+export MINERU_API="http://localhost:8000/file_parse"
+```
+
+#### Option 2: AWS Textract
+To use AWS Textract for PDF parsing, install the textract dependencies and configure AWS credentials:
+
+```bash
+# Install AWS Textract dependencies
+pip install "pptagent[textract]"
+# or if installing from source
+pip install -e ".[textract]"
+
+# Set AWS credentials and select textract parser
+export PDF_PARSER="textract"
+export AWS_ACCESS_KEY_ID="your_access_key"
+export AWS_SECRET_ACCESS_KEY="your_secret_key"
+export AWS_REGION="us-east-1"  # Optional, defaults to us-east-1
+```
+
+**Advantages of AWS Textract:**
+- No additional server setup required (fully managed service)
+- Excellent table and form extraction
+- Built-in OCR for scanned documents
+- Pay-as-you-go pricing
 
 Some recommended templates are available in the [templates](pptagent/templates/) directory, and you can also refer to [Best Practice](BESTPRACTICE.md) for more details.
 
@@ -122,7 +154,11 @@ docker pull forceless/pptagent:latest
 # mapping home directory to /root to allow caching of models
 docker run -dt --gpus all --ipc=host --name pptagent \
   -e OPENAI_API_KEY=$OPENAI_API_KEY \
+  -e PDF_PARSER=$PDF_PARSER \
   -e MINERU_API=$MINERU_API \
+  -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+  -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+  -e AWS_REGION=$AWS_REGION \
   -p 9297:9297 \
   -p 8088:8088 \
   -v $HOME:/root \
@@ -162,7 +198,17 @@ pip install -e ".[full]"
    export API_BASE="http://your_service_provider/v1"
    export LANGUAGE_MODEL="openai/gpt-4.1"
    export VISION_MODEL="openai/gpt-4.1"
+   
+   # PDF Parser Configuration (choose one)
+   # Option 1: MinerU (default)
+   export PDF_PARSER="mineru"
    export MINERU_API="http://localhost:8000/file_parse"
+   
+   # Option 2: AWS Textract
+   # export PDF_PARSER="textract"
+   # export AWS_ACCESS_KEY_ID="your_access_key"
+   # export AWS_SECRET_ACCESS_KEY="your_secret_key"
+   # export AWS_REGION="us-east-1"
    ```
 
 2. **Run Backend**

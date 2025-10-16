@@ -23,8 +23,9 @@
       <!-- Row 2: Selectors -->
       <div class="selectors">
         <div class="pages-selection">
+          <label class="selector-label">Number of Slides</label>
           <select v-model="selectedPages">
-            <option v-for="page in pagesOptions" :key="page" :value="page">{{ page }} 页</option>
+            <option v-for="page in pagesOptions" :key="page" :value="page">{{ page }} slides</option>
           </select>
         </div>
       </div>
@@ -105,66 +106,72 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
-  background-color: #f0f8ff;
-  padding: 40px;
+  min-height: 100%;
+  background: linear-gradient(135deg, #FFFFFF 0%, #FFF9F5 100%);
+  padding: 3rem 2rem;
   box-sizing: border-box;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(232, 119, 34, 0.12);
+  border: 1px solid rgba(232, 119, 34, 0.1);
 }
 
 .upload-options {
   display: flex;
   flex-direction: column;
-  gap: 30px;
+  gap: 2.5rem;
   width: 100%;
-  max-width: 80%;
+  max-width: 900px;
 }
 
 .upload-buttons,
 .selectors {
   display: flex;
   justify-content: center;
-  gap: 20px;
+  gap: 2rem;
   width: 100%;
 }
 
 .upload-section,
 .pages-selection {
-  flex: 0 1 200px;
+  flex: 1;
+  max-width: 300px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  margin: 0 10px;
+  align-items: stretch;
 }
 
-.upload-section {
-  margin-left: 3em;
-  margin-right: 3em;
-}
-
-.pages-selection {
-  margin-left: 3em;
-  margin-right: 3em;
+.selector-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #E87722;
+  margin-bottom: 0.75rem;
+  text-align: center;
 }
 
 .upload-label {
   position: relative;
-  background-color: #42b983;
-  color: white;
-  padding: 10px 20px;
-  border-radius: 5px;
+  background: linear-gradient(135deg, #FFE4D1 0%, #FFD4B8 100%);
+  color: #D04A02;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
   cursor: pointer;
   width: 100%;
   text-align: center;
-  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.3s;
-  font-size: 16px;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+  font-weight: 600;
+  box-shadow: 0 4px 16px rgba(232, 119, 34, 0.2);
+  border: 2px solid rgba(232, 119, 34, 0.3);
 }
 
 .upload-label:hover {
-  background-color: #369870;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 24px rgba(232, 119, 34, 0.3);
+  background: linear-gradient(135deg, #FFD4B8 0%, #FFC49F 100%);
+  border-color: #E87722;
 }
 
 .upload-section input[type="file"] {
@@ -172,50 +179,76 @@ export default {
 }
 
 .pages-selection select {
-  padding: 10px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
+  padding: 0.875rem;
+  border-radius: 12px;
+  border: 2px solid rgba(232, 119, 34, 0.3);
   width: 100%;
-  height: 40px;
   box-sizing: border-box;
-  font-size: 16px;
+  font-size: 1rem;
+  color: #D04A02;
+  background: linear-gradient(135deg, #FFFFFF 0%, #FFF9F5 100%);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(232, 119, 34, 0.1);
+}
+
+.pages-selection select:hover {
+  border-color: #E87722;
+  box-shadow: 0 4px 16px rgba(232, 119, 34, 0.2);
+  transform: translateY(-2px);
+}
+
+.pages-selection select:focus {
+  outline: none;
+  border-color: #E87722;
+  box-shadow: 0 0 0 4px rgba(232, 119, 34, 0.15);
 }
 
 .next-button {
-  background-color: #35495e;
+  background: linear-gradient(135deg, #E87722 0%, #D04A02 100%);
   color: white;
-  padding: 12px 0;
+  padding: 1rem 3rem;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   cursor: pointer;
-  width: 220px;
+  width: 240px;
   display: block;
-  margin: 30px auto 0;
-  font-size: 20px;
+  margin: 2rem auto 0;
+  font-size: 1.125rem;
   font-weight: 700;
-  transition: background-color 0.3s, transform 0.2s;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(232, 119, 34, 0.3);
 }
 
 .next-button:hover {
-  background-color: #2c3e50;
-  transform: scale(1.05);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 24px rgba(232, 119, 34, 0.4);
+  background: linear-gradient(135deg, #F08030 0%, #E05510 100%);
+}
+
+.next-button:active {
+  transform: translateY(-1px);
 }
 
 .uploaded-symbol {
   position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: green;
-  font-size: 18px;
+  right: 1rem;
+  color: #4CAF50;
+  font-size: 1.25rem;
+  filter: drop-shadow(0 2px 4px rgba(76, 175, 80, 0.3));
 }
 
-@media (max-width: 600px) {
-
+@media (max-width: 768px) {
   .upload-buttons,
   .selectors {
     flex-direction: column;
-    gap: 35px;
+    gap: 1.5rem;
+  }
+
+  .upload-section,
+  .pages-selection {
+    max-width: 100%;
   }
 
   .next-button {
@@ -226,15 +259,15 @@ export default {
 .or-divider {
   display: flex;
   align-items: center;
-  color: #666;
-  font-weight: bold;
-  font-size: 14px;
-  margin: 0 -10px;
+  color: #E87722;
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin: 0;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .or-divider {
-    margin: -15px 0;
+    margin: 0;
     justify-content: center;
   }
 }
