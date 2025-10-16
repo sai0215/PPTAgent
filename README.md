@@ -45,6 +45,7 @@ We present PPTAgent, an innovative system that automatically generates presentat
 
 ## 📅 News
 
+- [2025/10]: 🎨 **NEW!** Designer & Standard Template workflow - Merge designs with content while preserving fonts! See [Guide](./DESIGNER_STANDARD_TEMPLATE_GUIDE.md)
 - [2025/10]: 🌐 Added AWS Textract support as an alternative PDF parser - no server setup required! See [AWS Textract Setup Guide](./AWS_TEXTRACT_SETUP.md)
 - [2025/09]: 🛠️ We support MCP server now, see [MCP Server](./DOC.md#mcp-server-) for details
 - [2025/09]: 🚀 Released v2 with major improvements - see [release notes](https://github.com/icip-cas/PPTAgent/releases/tag/v0.2.0) for details

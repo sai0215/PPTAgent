@@ -5,18 +5,20 @@
       <!-- Row 1: Upload Buttons -->
       <div class="upload-buttons">
         <div class="upload-section">
-          <label for="pptx-upload" class="upload-label">
-            Upload PPTX
-            <span v-if="pptxFile" class="uploaded-symbol">✔️</span>
+          <label for="designer-upload" class="upload-label">
+            Designer Template (PPTX)
+            <span v-if="designerFile" class="uploaded-symbol">✔️</span>
           </label>
-          <input type="file" id="pptx-upload" @change="handleFileUpload($event, 'pptx')" accept=".pptx" />
+          <input type="file" id="designer-upload" @change="handleFileUpload($event, 'designer')" accept=".pptx" />
+          <small class="help-text">Style & layout reference</small>
         </div>
         <div class="upload-section">
-          <label for="pdf-upload" class="upload-label">
-            Upload PDF
-            <span v-if="pdfFile" class="uploaded-symbol">✔️</span>
+          <label for="standard-upload" class="upload-label">
+            Standard Template (PPTX)
+            <span v-if="standardFile" class="uploaded-symbol">✔️</span>
           </label>
-          <input type="file" id="pdf-upload" @change="handleFileUpload($event, 'pdf')" accept=".pdf" />
+          <input type="file" id="standard-upload" @change="handleFileUpload($event, 'standard')" accept=".pptx" />
+          <small class="help-text">Content source with fonts</small>
         </div>
       </div>
 
@@ -41,24 +43,27 @@ export default {
   name: 'UploadComponent',
   data() {
     return {
-      pptxFile: null,
-      pdfFile: null,
+      designerFile: null,  // Designer Template (PPTX) - style/layout reference
+      standardFile: null,  // Standard Template (PPTX) - content source
       selectedPages: 6,
       pagesOptions: Array.from({ length: 12 }, (_, i) => i + 3),
-      isPptxEnabled:true
+      isPptxEnabled: true
     }
   },
   methods: {
     handleFileUpload(event, fileType) {
-      console.log("file uploaded :", fileType)
+      console.log("file uploaded:", fileType)
       const file = event.target.files[0]
-      if (fileType === 'pptx') {
-        this.pptxFile = file
-      } else if (fileType === 'pdf') {
-        this.pdfFile = file
+      if (fileType === 'designer') {
+        this.designerFile = file
+        console.log("Designer Template uploaded:", file.name)
+      } else if (fileType === 'standard') {
+        this.standardFile = file
+        console.log("Standard Template uploaded:", file.name)
       }
     },
     async goToGenerate() {
+      // Check backend connectivity
       this.$axios.get('/')
         .then(response => {
           console.log("Backend is running", response.data);
@@ -69,17 +74,26 @@ export default {
           return;
         });
 
-      if (!this.pdfFile) {
-        alert('Please upload a PDF file.');
+      // Validate Standard Template is uploaded
+      if (!this.standardFile) {
+        alert('Please upload a Standard Template (PPTX) file with your content.');
         return;
       }
 
+      // Prepare form data
       const formData = new FormData();
-      if (this.pptxFile) {
-        formData.append('pptxFile', this.pptxFile);
+      
+      // Add Designer Template if provided (optional - uses default if not provided)
+      if (this.designerFile) {
+        formData.append('designerTemplate', this.designerFile);
+        console.log("Including Designer Template:", this.designerFile.name)
       }
-      formData.append('pdfFile', this.pdfFile);
+      
+      // Add Standard Template (required)
+      formData.append('standardTemplate', this.standardFile);
       formData.append('numberOfPages', this.selectedPages);
+      
+      console.log("Uploading with", this.selectedPages, "slides")
 
       try {
         const uploadResponse = await this.$axios.post('/api/upload', formData, {
@@ -94,6 +108,7 @@ export default {
       } catch (error) {
         console.error("Upload error:", error)
         this.statusMessage = 'Failed to upload files.'
+        alert('Upload failed: ' + (error.response?.data?.detail || error.message))
       }
     }
   }
@@ -176,6 +191,15 @@ export default {
 
 .upload-section input[type="file"] {
   display: none;
+}
+
+.help-text {
+  display: block;
+  text-align: center;
+  font-size: 0.75rem;
+  color: #666;
+  margin-top: 0.5rem;
+  font-style: italic;
 }
 
 .pages-selection select {

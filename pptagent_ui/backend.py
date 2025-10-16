@@ -28,6 +28,7 @@ from pptagent.induct import SlideInducter
 from pptagent.model_utils import ModelManager, parse_pdf
 from pptagent.multimodal import ImageLabler
 from pptagent.pptgen import PPTAgent
+from pptagent.pptx_parser import parse_standard_template_pptx, content_to_document_format
 from pptagent.presentation import Presentation
 from pptagent.utils import Config, get_logger, package_join, ppt_to_images_async
 
@@ -35,9 +36,9 @@ from pptagent.utils import Config, get_logger, package_join, ppt_to_images_async
 DEBUG = True if len(sys.argv) == 1 else False
 RUNS_DIR = package_join("runs")
 STAGES = [
-    "PPT Parsing",
-    "PDF Parsing",
-    "PPT Analysis",
+    "Designer Template Parsing",
+    "Standard Template Parsing",
+    "Content Analysis",
     "PPT Generation",
     "Success!",
 ]
@@ -103,8 +104,8 @@ class ProgressManager:
 
 @app.post("/api/upload")
 async def create_task(
-    pptxFile: UploadFile = File(None),
-    pdfFile: UploadFile = File(None),
+    designerTemplate: UploadFile = File(None),  # Previously pptxFile
+    standardTemplate: UploadFile = File(None),  # Previously pdfFile, now also PPTX
     topic: str = Form(None),
     numberOfPages: int = Form(...),
 ):
@@ -113,28 +114,36 @@ async def create_task(
     os.makedirs(join(RUNS_DIR, task_id))
     task = {
         "numberOfPages": numberOfPages,
-        "pptx": "default_template",
+        "designer_template": "default_template",
     }
-    if pptxFile is not None:
-        pptx_blob = await pptxFile.read()
-        pptx_md5 = hashlib.md5(pptx_blob).hexdigest()
-        task["pptx"] = pptx_md5
-        pptx_dir = join(RUNS_DIR, "pptx", pptx_md5)
-        if not os.path.exists(pptx_dir):
-            os.makedirs(pptx_dir, exist_ok=True)
-            with open(join(pptx_dir, "source.pptx"), "wb") as f:
-                f.write(pptx_blob)
-    if pdfFile is not None:
-        pdf_blob = await pdfFile.read()
-        pdf_md5 = hashlib.md5(pdf_blob).hexdigest()
-        task["pdf"] = pdf_md5
-        pdf_dir = join(RUNS_DIR, "pdf", pdf_md5)
-        if not os.path.exists(pdf_dir):
-            os.makedirs(pdf_dir, exist_ok=True)
-            with open(join(pdf_dir, "source.pdf"), "wb") as f:
-                f.write(pdf_blob)
+    
+    # Handle Designer Template (style/layout reference)
+    if designerTemplate is not None:
+        designer_blob = await designerTemplate.read()
+        designer_md5 = hashlib.md5(designer_blob).hexdigest()
+        task["designer_template"] = designer_md5
+        designer_dir = join(RUNS_DIR, "designer", designer_md5)
+        if not os.path.exists(designer_dir):
+            os.makedirs(designer_dir, exist_ok=True)
+            with open(join(designer_dir, "source.pptx"), "wb") as f:
+                f.write(designer_blob)
+        logger.info(f"Designer Template uploaded: {designerTemplate.filename}")
+    
+    # Handle Standard Template (content source - now PPTX)
+    if standardTemplate is not None:
+        standard_blob = await standardTemplate.read()
+        standard_md5 = hashlib.md5(standard_blob).hexdigest()
+        task["standard_template"] = standard_md5
+        standard_dir = join(RUNS_DIR, "standard", standard_md5)
+        if not os.path.exists(standard_dir):
+            os.makedirs(standard_dir, exist_ok=True)
+            # Save as PPTX (not PDF anymore)
+            with open(join(standard_dir, "source.pptx"), "wb") as f:
+                f.write(standard_blob)
+        logger.info(f"Standard Template uploaded: {standardTemplate.filename}")
     elif topic is not None:
         task["topic"] = topic
+    
     progress_store[task_id] = task
     # Start the PPT generation task asynchronously
     asyncio.create_task(ppt_gen(task_id))
@@ -213,31 +222,32 @@ async def ppt_gen(task_id: str, rerun=False):
         return
 
     task = progress_store.pop(task_id)
-    pptx_md5 = task["pptx"]
-    pdf_md5 = task["pdf"]
+    designer_md5 = task["designer_template"]
+    standard_md5 = task["standard_template"]
     generation_config = Config(join(RUNS_DIR, task_id))
-    pptx_config = Config(join(RUNS_DIR, "pptx", pptx_md5))
+    designer_config = Config(join(RUNS_DIR, "designer", designer_md5))
     json.dump(
         task, open(join(generation_config.RUN_DIR, "task.json"), "w", encoding="utf-8")
     )
     progress = ProgressManager(task_id, STAGES)
-    parsedpdf_dir = join(RUNS_DIR, "pdf", pdf_md5)
-    ppt_image_folder = join(pptx_config.RUN_DIR, "slide_images")
+    parsed_standard_dir = join(RUNS_DIR, "standard", standard_md5)
+    ppt_image_folder = join(designer_config.RUN_DIR, "slide_images")
 
     await send_progress(
         active_connections[task_id], "task initialized successfully", 10
     )
 
     try:
-        # ppt parsing
+        # Designer Template parsing (style/layout reference)
+        logger.info(f"{task_id}: Parsing Designer Template")
         presentation = Presentation.from_file(
-            join(pptx_config.RUN_DIR, "source.pptx"), pptx_config
+            join(designer_config.RUN_DIR, "source.pptx"), designer_config
         )
         if not os.path.exists(ppt_image_folder) or len(
             os.listdir(ppt_image_folder)
         ) != len(presentation):
             await ppt_to_images_async(
-                join(pptx_config.RUN_DIR, "source.pptx"), ppt_image_folder
+                join(designer_config.RUN_DIR, "source.pptx"), ppt_image_folder
             )
             assert len(os.listdir(ppt_image_folder)) == len(presentation) + len(
                 presentation.error_history
@@ -252,10 +262,10 @@ async def ppt_gen(task_id: str, rerun=False):
                     join(ppt_image_folder, f"slide_{slide.slide_idx:04d}.jpg"),
                 )
 
-        labler = ImageLabler(presentation, pptx_config)
-        if os.path.exists(join(pptx_config.RUN_DIR, "image_stats.json")):
+        labler = ImageLabler(presentation, designer_config)
+        if os.path.exists(join(designer_config.RUN_DIR, "image_stats.json")):
             image_stats = json.load(
-                open(join(pptx_config.RUN_DIR, "image_stats.json"), encoding="utf-8")
+                open(join(designer_config.RUN_DIR, "image_stats.json"), encoding="utf-8")
             )
             labler.apply_stats(image_stats)
         else:
@@ -263,7 +273,7 @@ async def ppt_gen(task_id: str, rerun=False):
             json.dump(
                 labler.image_stats,
                 open(
-                    join(pptx_config.RUN_DIR, "image_stats.json"),
+                    join(designer_config.RUN_DIR, "image_stats.json"),
                     "w",
                     encoding="utf-8",
                 ),
@@ -272,56 +282,81 @@ async def ppt_gen(task_id: str, rerun=False):
             )
         await progress.report_progress()
 
-        # pdf parsing
-        if not os.path.exists(join(parsedpdf_dir, "source.md")):
-            await parse_pdf(
-                join(RUNS_DIR, "pdf", pdf_md5, "source.pdf"),
-                parsedpdf_dir,
+        # Standard Template parsing (content source with fonts)
+        logger.info(f"{task_id}: Parsing Standard Template PPTX")
+        if not os.path.exists(join(parsed_standard_dir, "content.json")):
+            # Parse Standard Template PPTX with font information
+            pptx_content = await parse_standard_template_pptx(
+                join(RUNS_DIR, "standard", standard_md5, "source.pptx"),
+                parsed_standard_dir,
             )
-            text_content = open(
-                join(parsedpdf_dir, "source.md"), encoding="utf-8"
-            ).read()
+            
+            # Convert to markdown for compatibility
+            markdown_content = pptx_content.to_markdown()
+            with open(join(parsed_standard_dir, "source.md"), "w", encoding="utf-8") as f:
+                f.write(markdown_content)
+            
+            # Save structured content with font information
+            content_dict = content_to_document_format(pptx_content)
+            json.dump(
+                content_dict,
+                open(join(parsed_standard_dir, "content.json"), "w"),
+                ensure_ascii=False,
+                indent=4,
+            )
+            logger.info(f"{task_id}: Parsed {pptx_content.num_slides} slides from Standard Template")
         else:
-            text_content = open(
-                join(parsedpdf_dir, "source.md"), encoding="utf-8"
+            content_dict = json.load(
+                open(join(parsed_standard_dir, "content.json"), encoding="utf-8")
+            )
+            markdown_content = open(
+                join(parsed_standard_dir, "source.md"), encoding="utf-8"
             ).read()
+            logger.info(f"{task_id}: Loaded cached Standard Template content")
+        
         await progress.report_progress()
 
-        # document refine
-        if not os.path.exists(join(parsedpdf_dir, "refined_doc.json")):
+        # Content Analysis - Convert to Document format
+        logger.info(f"{task_id}: Analyzing content structure")
+        if not os.path.exists(join(parsed_standard_dir, "refined_doc.json")):
             source_doc = await Document.from_markdown(
-                text_content,
+                markdown_content,
                 models.language_model,
                 models.vision_model,
-                parsedpdf_dir,
+                parsed_standard_dir,
             )
+            # Enhance with font information from content_dict
+            source_doc_dict = source_doc.model_dump()
+            source_doc_dict["font_metadata"] = content_dict  # Store font info
+            
             json.dump(
-                source_doc.model_dump(),
-                open(join(parsedpdf_dir, "refined_doc.json"), "w"),
+                source_doc_dict,
+                open(join(parsed_standard_dir, "refined_doc.json"), "w"),
                 ensure_ascii=False,
                 indent=4,
             )
         else:
-            source_doc = json.load(
-                open(join(parsedpdf_dir, "refined_doc.json"), encoding="utf-8")
+            source_doc_dict = json.load(
+                open(join(parsed_standard_dir, "refined_doc.json"), encoding="utf-8")
             )
-            source_doc = Document.model_validate(source_doc)
+            source_doc = Document.model_validate(source_doc_dict)
         await progress.report_progress()
 
-        # Slide Induction
-        if not os.path.exists(join(pptx_config.RUN_DIR, "slide_induction.json")):
+        # Slide Induction (Designer Template analysis)
+        logger.info(f"{task_id}: Analyzing Designer Template layouts")
+        if not os.path.exists(join(designer_config.RUN_DIR, "slide_induction.json")):
             deepcopy(presentation).save(
-                join(pptx_config.RUN_DIR, "template.pptx"), layout_only=True
+                join(designer_config.RUN_DIR, "template.pptx"), layout_only=True
             )
             await ppt_to_images_async(
-                join(pptx_config.RUN_DIR, "template.pptx"),
-                join(pptx_config.RUN_DIR, "template_images"),
+                join(designer_config.RUN_DIR, "template.pptx"),
+                join(designer_config.RUN_DIR, "template_images"),
             )
             slide_inducter = SlideInducter(
                 presentation,
                 ppt_image_folder,
-                join(pptx_config.RUN_DIR, "template_images"),
-                pptx_config,
+                join(designer_config.RUN_DIR, "template_images"),
+                designer_config,
                 models.image_model,
                 models.language_model,
                 models.vision_model,
@@ -331,7 +366,7 @@ async def ppt_gen(task_id: str, rerun=False):
             json.dump(
                 slide_induction,
                 open(
-                    join(pptx_config.RUN_DIR, "slide_induction.json"),
+                    join(designer_config.RUN_DIR, "slide_induction.json"),
                     "w",
                     encoding="utf-8",
                 ),
@@ -341,12 +376,13 @@ async def ppt_gen(task_id: str, rerun=False):
         else:
             slide_induction = json.load(
                 open(
-                    join(pptx_config.RUN_DIR, "slide_induction.json"), encoding="utf-8"
+                    join(designer_config.RUN_DIR, "slide_induction.json"), encoding="utf-8"
                 )
             )
         await progress.report_progress()
 
-        # PPT Generation with PPTAgent
+        # PPT Generation - Merge Standard Template content with Designer Template style
+        logger.info(f"{task_id}: Generating presentation with Designer Template style and Standard Template content")
         ppt_agent = PPTAgent(
             models.language_model,
             models.vision_model,
@@ -363,7 +399,7 @@ async def ppt_gen(task_id: str, rerun=False):
             num_slides=task["numberOfPages"],
         )
         prs.save(join(generation_config.RUN_DIR, "final.pptx"))
-        logger.info(f"{task_id}: generation finished")
+        logger.info(f"{task_id}: Presentation generated successfully!")
         await progress.report_progress()
     except Exception as e:
         await progress.fail_stage(str(e))
